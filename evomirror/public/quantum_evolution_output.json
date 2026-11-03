@@ -1,0 +1,16 @@
+{
+  "schema": "AUEVO-QuantumOutput/v1.0",
+  "input_metrics": {
+    "glow": 0.5,
+    "density": 0.5,
+    "motion": 0.7,
+    "resonance": 369.0
+  },
+  "quantum_expectation_values": [
+    0.0,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "quantum_evolution_delta": 4.5
+}
