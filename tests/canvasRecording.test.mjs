@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { startCanvasRecording, recordingExtension } from '../src/canvasRecording.js';
+import { startCanvasRecording, recordingExtension, recordingCandidates } from '../src/canvasRecording.js';
 let owned=[];
 const track=kind=>({kind,readyState:'live',stop(){this.readyState='ended';},clone(){const copy=track(kind);owned.push(copy);return copy;}});
 const original=track('audio');
@@ -24,3 +24,6 @@ assert.throws(()=>startCanvasRecording({canvas,microphone,onComplete(){},onError
 assert.throws(()=>startCanvasRecording({canvas,microphone:{getAudioTracks:()=>[]},onComplete(){},onError(){}}),/Start LISTEN/);
 assert.equal(recordingExtension('video/webm;codecs=vp9,opus'),'webm');assert.throws(()=>recordingExtension('video/unknown'));
 console.log('PASS: manual stop, MP4 fallback, matching extensions, cancelled recording, encoder failure cleanup, missing microphone, original stream preserved.');
+
+assert.equal(recordingCandidates("Mozilla iPhone AppleWebKit Safari")[0],"video/mp4");
+assert(recordingCandidates("Mozilla Windows Chrome Safari")[0].startsWith("video/webm"));

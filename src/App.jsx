@@ -12,6 +12,7 @@ import { createDeepSpace, spaceProvenance } from './deepSpace.js';
 import { cosmicOrbFragment } from './cosmicOrb.js';
 import { createMistMaterial, createResonantRays } from './resonantMist.js';
 import { startCanvasRecording } from './canvasRecording.js';
+import { canShareMedia, saveMedia } from './mediaSave.js';
 
 const API = 'https://api.evomirror.com';
 // Preserve the unfinished account code, but do not expose or call it in this prototype.
@@ -51,6 +52,7 @@ async function apiCall(path, opts = {}) {
 
 function SealCard({ seal, onError }) {
     const [url, setUrl] = useState('');
+    const [saveMessage, setSaveMessage] = useState('');
     useEffect(() => {
         const imageUrl = URL.createObjectURL(seal.image); setUrl(imageUrl);
         return () => URL.revokeObjectURL(imageUrl);
@@ -59,9 +61,13 @@ function SealCard({ seal, onError }) {
         <a href={url} target="_blank" rel="noreferrer" aria-label="Open saved seal image"><img src={url || undefined} alt={`EvoMirror seal saved ${new Date(seal.createdAt).toLocaleString()}`} /></a>
         <time dateTime={seal.createdAt}>{new Date(seal.createdAt).toLocaleString()}</time>
         <div className="seal-downloads">
-            <button onClick={() => downloadBlob(seal.image, `EvoMirror-Seal-${seal.id}.png`)}>IMAGE</button>
+            <button onClick={() => {
+                saveMedia(seal.image, `EvoMirror-Seal-${seal.id}.png`).then(result => setSaveMessage(result === 'shared' ? 'Use Save Image in the share sheet to add it to Photos.' : result === 'cancelled' ? 'Share cancelled. Your seal remains here.' : 'Image downloaded.')).catch(() => setSaveMessage('Sharing unavailable. Use DOWNLOAD IMAGE instead.'));
+            }}>SAVE IMAGE</button>
+            <button onClick={() => downloadBlob(seal.image, `EvoMirror-Seal-${seal.id}.png`)}>DOWNLOAD IMAGE</button>
             <button onClick={() => exportSeal(seal).catch(() => onError('Download failed. Your saved seal is still in this browser.'))}>FULL SEAL</button>
         </div>
+        <p className="archive-feedback" role="status">{saveMessage}</p>
     </article>;
 }
 
@@ -110,6 +116,7 @@ export default function App() {
     const recordingSessionRef = useRef(null);
     const [isFinalizingCapture, setIsFinalizingCapture] = useState(false);
     const [captureMessage, setCaptureMessage] = useState('');
+    const [recordedClip, setRecordedClip] = useState(null);
 
     // Quantum Output Ref
     const quantumDataRef = useRef(null);
@@ -628,9 +635,12 @@ export default function App() {
                 onError: failed,
                 onComplete: ({ blob, extension }) => {
                     recordingSessionRef.current = null; setIsRecording(false); setIsFinalizingCapture(false);
-                    downloadBlob(blob, `EvoMirror_Resonance_Clip_${Date.now()}.${extension}`);
+                    const filename = `EvoMirror_Resonance_Clip_${Date.now()}.${extension}`;
+                    setRecordedClip({ blob, filename, extension });
+                    // Keep a download backup; Save Video is a separate user gesture for device sharing.
+                    downloadBlob(blob, filename);
                     setCaptureStatus('CAPTURE');
-                    setCaptureMessage('Video + microphone audio downloaded.');
+                    setCaptureMessage(extension === 'mp4' ? 'MP4 downloaded. Tap SAVE VIDEO and choose Save Video to add it to Photos.' : 'WebM downloaded: this browser cannot record MP4. Photos may not accept it; conversion is needed.');
                 },
             });
             setIsRecording(true); setCaptureStatus('STOP REC');
@@ -709,6 +719,10 @@ export default function App() {
                         {captureStatus}
                     </button>
                 </div>
+                {recordedClip && <div className="clip-save-row">
+                    <button onClick={() => saveMedia(recordedClip.blob, recordedClip.filename).then(result => setCaptureMessage(result === 'shared' ? 'Share sheet closed. Choose Save Video there to add a supported video to Photos.' : result === 'cancelled' ? 'Share cancelled. The downloaded copy is still available.' : 'Video downloaded. On iPhone, open a compatible MP4 and use Share → Save Video.')).catch(() => setCaptureMessage('Could not open sharing. The downloaded copy is still available.'))}>SAVE VIDEO</button>
+                    {canShareMedia(recordedClip.blob, recordedClip.filename) && <span className="sr-only">Opens your device share sheet. Select Save Video if available.</span>}
+                </div>}
                 <p className="mic-feedback" role="status" aria-live="polite">{captureMessage || micMessage}</p>
             </section>
 
@@ -768,7 +782,7 @@ export default function App() {
                         ✕
                     </button>
                 </h3>
-                <p className="vault-description">Saved in this browser on this device. Clearing site data removes this archive. Download FULL SEAL for an image and metadata backup; IMAGE saves a PNG. No cloud sync or animated replay yet.</p>
+                <p className="vault-description">Saved in this browser on this device. Clearing site data removes this archive. SAVE IMAGE opens device sharing when supported; choose Save Image for Photos. DOWNLOAD IMAGE saves a PNG. FULL SEAL backs up the image and metadata. No cloud sync or animated replay yet.</p>
                 <p className="archive-feedback" role="status" aria-live="polite">{archiveError || (archiveLoading ? 'Opening your archive...' : `${seals.length} saved ${seals.length === 1 ? 'seal' : 'seals'}`)}</p>
                 <div id="gallery-grid" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '15px', marginTop: '15px' }}>
                     {seals.map(seal => <SealCard key={seal.id} seal={seal} onError={setArchiveError} />)}

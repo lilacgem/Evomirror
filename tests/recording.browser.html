@@ -11,10 +11,11 @@ document.querySelector('#run').onclick=async()=>{
  function draw(){if(!active)return;const c=canvas.getContext('2d');c.fillStyle=frame++%2?'#8844cc':'#225577';c.fillRect(0,0,160,120);requestAnimationFrame(draw);}draw();
  result.textContent='Recording synthetic audio + canvas...';
  try{
- startCanvasRecording({canvas,microphone:destination.stream,maxDurationMs:1400,
+ startCanvasRecording({canvas,microphone:destination.stream,maxDurationMs:5000,
  onError:error=>{result.textContent='FAIL: '+error.message;finish();},
  onComplete:async({blob,extension,mimeType})=>{
   try{
+   const download=document.createElement('a');download.href=URL.createObjectURL(blob);download.download='EvoMirror-recording-format-check.'+extension;download.click();
    const decoded=await context.decodeAudioData(await blob.arrayBuffer());
    const channel=decoded.getChannelData(0);let squares=0;for(const sample of channel)squares+=sample*sample;
    const rms=Math.sqrt(squares/channel.length);

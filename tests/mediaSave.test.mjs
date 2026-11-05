@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import {canShareMedia,saveMedia} from '../src/mediaSave.js';
+const image=new Blob(['png-data'],{type:'image/png'});let shared;
+Object.defineProperty(globalThis,'navigator',{value:{canShare:({files})=>files[0].type==='image/png',share:async data=>{shared=data;}},configurable:true});
+assert(canShareMedia(image,'seal.png'));assert.equal(await saveMedia(image,'seal.png'),'shared');assert.equal(shared.files[0].name,'seal.png');
+navigator.share=async()=>{throw Object.assign(new Error('cancelled'),{name:'AbortError'});};
+assert.equal(await saveMedia(image,'seal.png'),'cancelled');
+navigator.share=async()=>{throw new Error('blocked');};await assert.rejects(saveMedia(image,'seal.png'),/blocked/);
+let downloaded=false;globalThis.document={createElement:()=>({click(){downloaded=true;}})};const timeout=globalThis.setTimeout;globalThis.setTimeout=fn=>{fn();return 0;};
+navigator.canShare=()=>false;assert.equal(await saveMedia(image,'seal.png'),'downloaded');assert(downloaded);globalThis.setTimeout=timeout;
+console.log('PASS: native file sharing, typed filename, cancellation, blocked-sharing error, and download fallback.');

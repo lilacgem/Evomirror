@@ -3,6 +3,14 @@ export function recordingExtension(type) {
  if (type.split(';')[0] === 'video/webm') return 'webm';
  throw new Error('This browser selected an unsupported recording container.');
 }
+export function recordingCandidates(userAgent = globalThis.navigator?.userAgent || '') {
+ const mp4 = ['video/mp4', 'video/mp4;codecs=avc1.42E01E,mp4a.40.2'];
+ const webm = ['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'];
+ // Safari/iOS has native H.264/AAC recording. Other engines may advertise MP4
+ // but fail to provide AAC audio; retain the verified WebM+Opus path there.
+ const appleWebKit = /iPhone|iPad|iPod/.test(userAgent) || (/Safari/.test(userAgent) && !/Chrome|Chromium|Edg|OPR|Android/.test(userAgent));
+ return appleWebKit ? [...mp4,...webm] : [...webm,...mp4];
+}
 export function startCanvasRecording({ canvas, microphone, onComplete, onError, onStopping, maxDurationMs = 15000 }) {
  if (!globalThis.MediaRecorder || !canvas?.captureStream) throw new Error('Recording is not supported in this browser.');
  const audio = microphone?.getAudioTracks().filter(track => track.readyState === 'live');
@@ -19,7 +27,7 @@ export function startCanvasRecording({ canvas, microphone, onComplete, onError, 
   if (!videoStream.getVideoTracks().length) throw new Error('Canvas video capture is unavailable.');
   const clonedAudio = audio.map(track => { const clone = track.clone(); owned.push(clone); return clone; });
   const combined = new MediaStream([...videoStream.getVideoTracks(), ...clonedAudio]);
-  const candidates = ['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm','video/mp4'];
+  const candidates = recordingCandidates();
   const mimeType = candidates.find(type => MediaRecorder.isTypeSupported(type));
   recorder = mimeType ? new MediaRecorder(combined, { mimeType }) : new MediaRecorder(combined);
   recorder.ondataavailable = event => { if (event.data?.size) chunks.push(event.data); };
