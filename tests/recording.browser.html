@@ -1,0 +1,30 @@
+<!doctype html><meta charset="utf-8"><title>EvoMirror recording verification</title>
+<button id="run">Run recording check</button><pre id="result">Ready. Generates a test tone internally; no microphone access or speaker playback.</pre><canvas width="160" height="120"></canvas><video controls muted></video>
+<script type="module">
+import { startCanvasRecording } from '/src/canvasRecording.js';
+const result=document.querySelector('#result'),canvas=document.querySelector('canvas'),video=document.querySelector('video');
+document.querySelector('#run').onclick=async()=>{
+ const context=new AudioContext();await context.resume();
+ const oscillator=context.createOscillator(),gain=context.createGain(),destination=context.createMediaStreamDestination();
+ oscillator.frequency.value=440;gain.gain.value=.25;oscillator.connect(gain).connect(destination);oscillator.start();
+ let active=true,frame=0;
+ function draw(){if(!active)return;const c=canvas.getContext('2d');c.fillStyle=frame++%2?'#8844cc':'#225577';c.fillRect(0,0,160,120);requestAnimationFrame(draw);}draw();
+ result.textContent='Recording synthetic audio + canvas...';
+ try{
+ startCanvasRecording({canvas,microphone:destination.stream,maxDurationMs:1400,
+ onError:error=>{result.textContent='FAIL: '+error.message;finish();},
+ onComplete:async({blob,extension,mimeType})=>{
+  try{
+   const decoded=await context.decodeAudioData(await blob.arrayBuffer());
+   const channel=decoded.getChannelData(0);let squares=0;for(const sample of channel)squares+=sample*sample;
+   const rms=Math.sqrt(squares/channel.length);
+   video.src=URL.createObjectURL(blob);await new Promise((resolve,reject)=>{video.onloadedmetadata=resolve;video.onerror=reject;});
+   const report={mimeType,extension,bytes:blob.size,videoWidth:video.videoWidth,videoHeight:video.videoHeight,audioChannels:decoded.numberOfChannels,audioSeconds:decoded.duration,rms,originalAudioStillLive:destination.stream.getAudioTracks()[0].readyState==='live'};
+   if(!(report.videoWidth===160&&report.videoHeight===120&&rms>.05&&report.audioSeconds>1&&report.originalAudioStillLive))throw new Error(JSON.stringify(report));
+   result.textContent='PASS: '+JSON.stringify(report,null,2);
+  }catch(error){result.textContent='FAIL: '+error.message;}finally{finish();}
+ }});
+ }catch(error){result.textContent='FAIL: '+error.message;finish();}
+ function finish(){active=false;oscillator.stop();destination.stream.getTracks().forEach(t=>t.stop());context.close();}
+};
+</script>

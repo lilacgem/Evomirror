@@ -69,3 +69,42 @@ button {
     gap: 6px;
     width: 220px;
 }
+
+/* EvoMirror: quiet controls above the immersive scene. */
+.app-root { position: relative; width: 100%; height: 100dvh; color: #eee5ff; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.account-btn, .toggle-vault-btn, .personal-seal-link, .ambient-header, .dashboard { position: fixed; z-index: 5; }
+.account-btn { top: 20px; left: 20px; }
+.toggle-vault-btn { top: 20px; right: 20px; }
+.ambient-header { top: 78px; left: 0; width: 100%; text-align: center; font-size: 10px; letter-spacing: .24em; color: #d1afe0; pointer-events: none; }
+.personal-seal-link { bottom: 18px; left: 0; width: 100%; text-align: center; font-size: 10px; color: #c4a1cf; text-decoration: none; }
+.dashboard { bottom: 54px; left: 50%; transform: translateX(-50%); }
+.control-row { display: flex; gap: 10px; }
+.app-root button { background: rgba(15, 7, 25, .78); border: 1px solid rgba(209, 169, 237, .45); border-radius: 24px; letter-spacing: .12em; font-size: 10px; backdrop-filter: blur(12px); }
+.app-root button:focus-visible, .auth-input:focus-visible { outline: 2px solid #e2baff; outline-offset: 4px; }
+.auth-modal-overlay { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; background: #07020bbd; padding: 20px; }
+.auth-modal-card { width: min(380px, 100%); padding: 28px; border: 1px solid #8a6299; border-radius: 20px; background: #100a19; }
+.auth-modal-title { font-size: 20px; margin-bottom: 22px; }
+.auth-tabs { display: flex; gap: 10px; margin-bottom: 16px; }
+.auth-input { width: 100%; padding: 12px; margin-bottom: 15px; background: #20142b; border: 1px solid #80608f; border-radius: 8px; color: white; }
+.auth-error { color: #ffb1c9; margin: 12px 0; }
+.auth-close-btn { margin-top: 15px; }
+.vault-panel { display: none; position: fixed; z-index: 15; top: 76px; right: 20px; bottom: 105px; width: min(380px, calc(100vw - 40px)); padding: 20px; overflow-y: auto; border: 1px solid #775283; border-radius: 18px; background: rgba(15, 7, 25, .94); }
+.vault-panel.open { display: block; }
+.vault-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; }
+.vault-description { color: #c9b8d3; font-size: 12px; line-height: 1.7; }
+@media (max-width: 480px) {
+ .account-btn { left: 12px; top: 14px; } .toggle-vault-btn { right: 12px; top: 14px; }
+ .app-root button { padding: 11px 13px; } .control-row { gap: 6px; }
+ .ambient-header { font-size: 8px; } .dashboard { bottom: 55px; }
+}
+
+.ambient-header { top: auto; bottom: 108px; opacity: .7; }
+
+.seal-card { border: 1px solid #63436f; border-radius: 12px; padding: 10px; background: #08040e; }
+.seal-card img { display: block; width: 100%; height: auto; border-radius: 8px; }
+.seal-card time { display: block; margin: 12px 0; color: #d4c1df; font-size: 11px; }
+.seal-downloads { display: flex; gap: 8px; flex-wrap: wrap; }
+.archive-feedback { font-size: 12px; color: #e4c9ef; line-height: 1.5; }
+
+.mic-feedback { position: absolute; top: 100%; left: 50%; transform: translateX(-50%); width: min(88vw, 420px); margin: 5px 0 0; color: #dac8e5; font-size: 10px; line-height: 1.4; text-align: center; pointer-events: none; }
